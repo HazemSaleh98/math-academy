@@ -1,6 +1,6 @@
 'use strict';
 /* standalone storage + tiny audio shims for the Math Academy */
-var KEY = 'mathacademy.v1';
+var KEY = 'mathacademy.preview1';
 var state = (function () { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; } })() || { name: 'Malek', stars: 0, math: {}, muted: false, auto: true };
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 function kidName() { var n = (state.name || 'Malek'); return String(n).toLowerCase().replace(/[^a-z0-9]/g, '') === 'malik' ? 'Malek' : n; }

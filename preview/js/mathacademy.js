@@ -327,7 +327,7 @@ var MathAcademy = (function () {
         ], mk('div', { tbl: n }), true);
     }
     function buildCur() {
-        var P = {};
+        var P = {}; PP = P;
         P.pv1 = lvl('pv1', '🧱', 'Ones & Tens', 'الآحاد والعشرات', [
             say('كل رقم له <b>مكان</b>، والمكان بيحدد قيمته!', 'Every digit has a <b>place</b>, and the place decides its value!') + blocks(34) + say('34 = 3 عشرات + 4 آحاد', '34 = 3 tens + 4 ones'),
             placeTable(34) + say('اليمين: <b>آحاد</b> (واحد واحد). والشمال: <b>عشرات</b> (كل عشرة = 10).', 'Right side: <b>ones</b> (one each). Left side: <b>tens</b> (each ten = 10).'),
@@ -473,6 +473,7 @@ var MathAcademy = (function () {
             T('l5', '🍕', 'المستوى ٥: الكسور والحياة', 'Level 5: Fractions & Real Life', ['f1', 'f2', 'f3', 'tm', 'mo', 'wpx'])
         ];
         ALL = []; TRACKS.forEach(function (t) { t.levels.forEach(function (l, i) { l.track = t; l.idx = i; ALL.push(l); }); });
+        tmBuild();
     }
     [1, 2, 5, 10, 3, 4, 6, 7, 8, 9, 11, 12].forEach(function (n) { });
     var TRACKS = [], ALL = [];
@@ -513,7 +514,7 @@ var MathAcademy = (function () {
     function mikeBox(text, pose, sz) { return '<div class="mkr' + (sz ? ' ' + sz : '') + '"><img src="mike/green_' + (pose || 'stand') + '.png" alt=""><div class="mkb">' + text + '</div></div>'; }
     function mikeSet(text, pose, clip) { var n = root && root.querySelector('#mkx'); if (n) { n.innerHTML = mikeBox(text, pose); emojify(n); } if (clip) mikePlay(clip); }
     var MK_AVAIL = (typeof MIKE_MATH_AVAIL !== 'undefined') ? MIKE_MATH_AVAIL : {};
-    function clipId(l, p) { return (LG === 'en' ? 'en_mk_' : 'mk_') + l.id + '_' + p; }
+    function clipId(l, p) { return (LG === 'en' ? 'en_mk_' : 'mk_') + (l.clip || l.id) + '_' + p; }
 
     /* ---------- spoken questions + explanations (compositional clips) ---------- */
     var NA = (typeof NumAudio !== 'undefined') ? NumAudio : { play: function (a, f) { if (f) f(false); }, stop: function () {}, qIds: function () { return null; }, numIds: function () { return []; } };
@@ -686,11 +687,12 @@ var MathAcademy = (function () {
     /* ----- home ----- */
     var OFF = [0, 48, 72, 48, 0, -48, -72, -48];
     function map() {
+        if (state.tab === 'tm') { if (LG !== 'en') { LG = 'en'; state.lang = 'en'; buildCur(); } return tmMap(); }
         var done = ALL.filter(function (l) { return starsOf(l) >= 1; }).length, tot = ALL.reduce(function (s, l) { return s + starsOf(l); }, 0);
         var nxt = ALL.filter(function (l) { return !starsOf(l); })[0] || ALL.filter(function (l) { return starsOf(l) < 3; })[0], nm = kidName(), str = state.streak && state.streak.n || 0;
         var h = '<div class="hh"><div class="tbr"><div class="chip">⭐ ' + tot + '</div>' + (str ? '<div class="stk">🔥 ' + str + '</div>' : '') + '<div class="logo"><b>Math Academy</b><small>أكاديمية الماث</small></div><button class="gear" id="mc" aria-label="settings">⚙️</button></div>'
             + '<div class="hero"><img src="mike/green_cheer.png" alt=""><div class="mkb">' + (LG === 'en' ? (done ? 'Hi ' + nm + '! Let\'s keep going 💪<span class="gl">أهلاً يا ' + nm + '! كمّل معايا من حيث وقفنا</span>' : 'Hi ' + nm + '! I\'m Mared Washwishny, your math teacher. Let\'s learn math in English! 🌟<span class="gl">أنا مارد وشوشني، هعلّمك الماث بالإنجليزي وأشرحلك بالعربي</span>') : (done ? 'أهلاً يا ' + nm + '! كمّل معايا من حيث وقفنا 💪' : 'أهلاً يا ' + nm + '! أنا مارد وشوشني، مدرس الماث بتاعك. هنتعلم كل حاجة خطوة بخطوة 🌟')) + '</div></div>'
-            + '<div class="lgs"><button data-lg="ar" class="' + (LG === 'ar' ? 'on' : '') + '">رياضيات بالعربي<small>Arabic Math</small></button><button data-lg="en" class="' + (LG === 'en' ? 'on' : '') + '">Math in English<small>رياضيات بالإنجليزي</small></button></div>'
+            + '<div class="lgs"><button data-lg="ar" class="' + (LG === 'ar' ? 'on' : '') + '">رياضيات بالعربي<small>Arabic Math</small></button><button data-lg="en" class="' + (LG === 'en' ? 'on' : '') + '">Math in English<small>رياضيات بالإنجليزي</small></button><button data-tab="tm" id="tmb">Top Math 📘<small>الكتاب المدرسي</small></button></div>'
             + '<div class="ov"><i style="width:' + Math.round(done / ALL.length * 100) + '%"></i></div><div class="ovt">' + tx(done + ' / ' + ALL.length + ' درس خلصناه', done + ' / ' + ALL.length + ' lessons done') + '</div>'
             + (nxt ? '<button class="btn y" id="go" style="margin-top:6px">' + (done ? tx('كمّل: ', 'Continue: ') : tx('ابدأ: ', 'Start: ')) + nm2(nxt) + ' ▶</button>' : '') + '</div>'
             + (done >= 2 ? '<button class="wu" id="wu">🔥 ' + tx('تسخين اليوم (6 أسئلة)', 'Daily Warm-up (6 questions)') + '</button>' : '');
@@ -707,9 +709,10 @@ var MathAcademy = (function () {
         el(h, 'home'); root.setAttribute('dir', LG === 'en' ? 'ltr' : 'rtl');
         var cb = root.querySelector('.n.cur'); if (cb) { var nd = cb.parentNode, offv = (LG === 'en' ? -1 : 1) * OFF[nxt.idx % 8]; nd.insertAdjacentHTML('afterbegin', '<img class="mm" src="mike/green_stand.png" alt="" style="' + (offv > 10 ? 'right:calc(50% + 62px)' : 'left:calc(50% + 62px)') + '">'); }
         root.querySelector('#mc').onclick = settings;
-        root.querySelectorAll('[data-lg]').forEach(function (b) { b.onclick = function () { if (b.getAttribute('data-lg') !== LG) { setLang(b.getAttribute('data-lg')); window.__scrolled = 0; map(); } }; });
+        root.querySelectorAll('[data-lg]').forEach(function (b) { b.onclick = function () { if (b.getAttribute('data-lg') !== LG) { state.tab = ''; setLang(b.getAttribute('data-lg')); window.__scrolled = 0; map(); } }; });
         root.querySelectorAll('.n').forEach(function (b) { b.onclick = function () { learn(ALL.filter(function (x) { return x.id === b.getAttribute('data-l'); })[0], 0); }; });
         root.querySelectorAll('[data-g]').forEach(function (b) { b.onclick = function () { startGame(GAMES.filter(function (g) { return g.id === b.getAttribute('data-g'); })[0]); }; });
+        var tb = root.querySelector('#tmb'); if (tb) tb.onclick = tmOpen;
         var gb = root.querySelector('#go'); if (gb) gb.onclick = function () { learn(nxt, 0); };
         var wu = root.querySelector('#wu'); if (wu) wu.onclick = warmup;
         if (nxt && !window.__scrolled) { window.__scrolled = 1; var cn = root.querySelector('.n.cur'); if (cn) setTimeout(function () { try { cn.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }, 700); }
@@ -836,7 +839,7 @@ var MathAcademy = (function () {
         if (l.id === 'warmup') { resultView(stars, tx('تسخين جامد! 🔥', 'Great warm-up! 🔥'), st.right + ' / ' + N + tx(' إجابة صح', ' right'), tx('🔁 تاني', '🔁 Again'), null, warmup, ''); return; }
         var old = starsOf(l); if (stars > old) { prog()[l.id] = stars; save(); }
         var nxt = l.track.levels[l.idx + 1] || (l.track.nextTrack && l.track.nextTrack.levels[0]);
-        if (!nxt) { var ti = TRACKS.indexOf(l.track); nxt = TRACKS[ti + 1] && TRACKS[ti + 1].levels[0]; }
+        if (!nxt && !l.tm) { var ti = TRACKS.indexOf(l.track); nxt = TRACKS[ti + 1] && TRACKS[ti + 1].levels[0]; }
         resultView(stars, stars === 3 ? tx('ممتاز يا بطل! 🏆', 'Excellent, champion! 🏆') : stars >= 1 ? tx('شاطر! 💪', 'Well done! 💪') : tx('جرب تاني، هتعدّيها!', 'Try again, you will get it!'), st.right + ' / ' + N + tx(' إجابة صح', ' right answers'), tx('🔁 جرب تاني', '🔁 Try again'), nxt && stars >= 1 ? function () { learn(nxt, 0); } : null, function () { session(l, 'practice'); }, tx('الدرس اللي بعده ▶', 'Next lesson ▶'));
     }
 
@@ -902,6 +905,256 @@ var MathAcademy = (function () {
             '.bld{display:flex;gap:10px;justify-content:center;margin:14px 0 0;flex-wrap:wrap}.bld button{border:0;border-radius:18px;padding:14px 18px;min-width:84px;font:inherit;font-size:22px;font-weight:900;color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.22);cursor:pointer}.bld button:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.22)}#bv{margin-top:8px;text-align:center}#bv .big{font-size:34px!important;color:#6C4DF6;font-weight:900}#ma[dir=ltr] .ovt{direction:ltr;text-align:center}#ma[dir=ltr],.mo[dir=ltr]{direction:ltr}.nlk{direction:ltr;display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:12px}.nlk button{border:3px solid #E1D9FF;border-radius:14px;padding:10px 0;font:inherit;font-size:20px;font-weight:900;background:#fff;color:#2B2350;box-shadow:0 4px 0 #DCD3FF;cursor:pointer}.nlk button.me{background:#FFD34D;border-color:#FFB800;box-shadow:0 4px 0 #D99A00}.nlk button.ok{background:#22C55E;border-color:#15803D;color:#fff}.nlk button.no{background:#FFE1E7;border-color:#E5365A}'
         ].join(''); document.head.appendChild(s);
     }
+
+
+    /* ---------- Top Math generators (book curriculum) ---------- */
+    var TM_UNITS = ['one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'];
+    var TM_TENS = { 30: 'thirty', 40: 'forty', 50: 'fifty', 60: 'sixty', 70: 'seventy', 80: 'eighty', 90: 'ninety', 100: 'one hundred' };
+    var TM_ORD = ['first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth'];
+    var TM_DAYS = [['Saturday','السبت'],['Sunday','الأحد'],['Monday','الإثنين'],['Tuesday','الثلاثاء'],['Wednesday','الأربعاء'],['Thursday','الخميس'],['Friday','الجمعة']];
+    var TM_MONTHS = [['January','يناير'],['February','فبراير'],['March','مارس'],['April','أبريل'],['May','مايو'],['June','يونيو'],['July','يوليو'],['August','أغسطس'],['September','سبتمبر'],['October','أكتوبر'],['November','نوفمبر'],['December','ديسمبر']];
+    var TM_SHAPES = [['circle','دايرة','⚪'],['square','مربع','🟦'],['triangle','مثلث','🔺'],['rectangle','مستطيل','▭']];
+    function tmSeq() { if (LG !== 'en') return null; var o = []; for (var i = 0; i < arguments.length; i++) o = o.concat(arguments[i]); return o; }
+    function tmWord(n) { if (n === 0) return 'zero'; if (n <= 20) return TM_UNITS[n - 1]; if (TM_TENS[n]) return TM_TENS[n]; return TM_TENS[Math.floor(n / 10) * 10] + '-' + TM_UNITS[n % 10 - 1]; }
+    function tmOpts(ans, lo, hi, k) { var s = {}, o = [ans]; s[ans] = 1; var g = 0; while (o.length < (k || 4) && g++ < 50) { var x = r(Math.max(lo, ans - 4), Math.min(hi, ans + 4)); if (!s[x]) { s[x] = 1; o.push(x); } } return shuf(o).map(String); }
+    function tmPick(list, ans, k) { var o = [ans], g = 0; while (o.length < (k || 4) && g++ < 60) { var x = pk(list); if (o.indexOf(x) < 0) o.push(x); } return shuf(o); }
+
+    function genNumWord(lo, hi) { var n = r(lo, hi), w = tmWord(n), ws = [w], g = 0;
+        while (ws.length < 4 && g++ < 60) { var m = Math.max(1, Math.min(hi + 5, n + r(-5, 5))), x = tmWord(m); if (ws.indexOf(x) < 0) ws.push(x); }
+        return { seq: tmSeq(['en_tm_q_word'], N(n)), html: tx('أنهي كلمة تكتب العدد ' + B(n) + '؟', 'Which word is the number ' + B(n) + '?'), vis: n <= 20 ? dots(n) : '', opts: shuf(ws), ans: w, exp: say(n + ' = ' + w, n + ' is spelled ' + w) }; }
+    function genWordNum(lo, hi) { var n = r(lo, hi);
+        return { seq: tmSeq(['en_tm_q_wordnum'], N(n)), html: tx('الكلمة دي معناها كام؟ ', 'What number is this word? ') + '<span class="big" dir="ltr">' + tmWord(n) + '</span>', vis: '', opts: tmOpts(n, Math.max(1, lo - 5), hi + 5), ans: String(n), exp: say(tmWord(n) + ' = ' + n, tmWord(n) + ' is ' + n) }; }
+    function genBefore(tt, hi) { hi = hi || 20; var n = r(2, hi - 1), t = tt ? pk(tt) : r(0, 2), ans = t === 0 ? n - 1 : t === 1 ? n + 1 : n, q, sq;
+        var ex = say((n - 1) + '، ' + n + '، ' + (n + 1), (n - 1) + ', ' + n + ', ' + (n + 1));
+        if (t === 2) return { seq: tmSeq(['en_tm_q_between'], N(n - 1), ['en_q_and'], N(n + 1)), html: tx('إيه العدد <b>اللي في النص</b> بين ' + B((n - 1) + ' و ' + (n + 1)) + '؟', 'What number is <b>between</b> ' + B((n - 1) + ' and ' + (n + 1)) + '?'), vis: '', opts: tmOpts(n, 0, hi), ans: String(n), exp: ex };
+        if (t === 0) q = ['إيه العدد اللي <b>قبل</b> ' + B(n) + '؟', 'What number comes <b>before</b> ' + B(n) + '?']; else q = ['إيه العدد اللي <b>بعد</b> ' + B(n) + '؟', 'What number comes <b>after</b> ' + B(n) + '?'];
+        return { seq: tmSeq([t === 0 ? 'en_tm_q_before' : 'en_tm_q_after'], N(n)), html: tx(q[0], q[1]), vis: '', opts: tmOpts(ans, 0, hi), ans: String(ans), exp: ex }; }
+    function genOrdinal() { var k = r(1, 10), items = ['🍎','🍌','🍇','🍓','🍊','🍐','🍒','🥕','🍋','🍉'], row = items.slice(0, 10);
+        return { seq: tmSeq(['en_tm_q_ord_a', 'en_tm_ord_' + k, 'en_tm_q_ord_b']), html: tx('أنهي واحدة ' + B(TM_ORD[k - 1]) + '؟ (من الشمال)', 'Which one is the ' + B(TM_ORD[k - 1]) + '? (from the left)'), vis: '<div class="sk" dir="ltr">' + row.map(function (e, i) { return '<span>' + e + '</span>'; }).join('') + '</div>', opts: tmPick(row, row[k - 1]), ans: row[k - 1], exp: say('بنعد من الشمال: ' + TM_ORD.slice(0, k).join('، '), 'Count from the left: ' + TM_ORD.slice(0, k).join(', ')) }; }
+    function genDay() { var i = r(0, 6), t = r(0, 1), d = TM_DAYS[i], a = TM_DAYS[(i + (t ? 1 : 6)) % 7];
+        return { seq: tmSeq([t ? 'en_tm_q_day_after' : 'en_tm_q_day_before', 'en_tm_day_' + i]), html: tx('اليوم ' + (t ? 'اللي بعد ' : 'اللي قبل ') + B(d[1]) + ' إيه؟', 'Which day comes ' + (t ? 'after ' : 'before ') + B(d[0]) + '?'), vis: '', opts: tmPick(TM_DAYS.map(function (x) { return x[0]; }), a[0]), optLbl: (function () { var o = {}; TM_DAYS.forEach(function (x) { o[x[0]] = tx(x[1], x[0]); }); return o; })(), ans: a[0], exp: say(TM_DAYS.map(function (x) { return x[1]; }).join('، '), TM_DAYS.map(function (x) { return x[0]; }).join(', ')) }; }
+    function genMonth() { var i = r(0, 11), t = r(0, 1), m = TM_MONTHS[i], a = TM_MONTHS[(i + (t ? 1 : 11)) % 12];
+        return { seq: tmSeq([t ? 'en_tm_q_month_after' : 'en_tm_q_month_before', 'en_tm_month_' + i]), html: tx('الشهر ' + (t ? 'اللي بعد ' : 'اللي قبل ') + B(m[1]) + ' إيه؟', 'Which month comes ' + (t ? 'after ' : 'before ') + B(m[0]) + '?'), vis: '', opts: tmPick(TM_MONTHS.map(function (x) { return x[0]; }), a[0]), optLbl: (function () { var o = {}; TM_MONTHS.forEach(function (x) { o[x[0]] = tx(x[1], x[0]); }); return o; })(), ans: a[0], exp: say(TM_MONTHS.map(function (x) { return x[1]; }).join('، '), TM_MONTHS.map(function (x) { return x[0]; }).join(', ')) }; }
+    function genShape() { var s = pk(TM_SHAPES);
+        return { seq: tmSeq(['en_tm_q_shape']), html: tx('اسم الشكل ده إيه؟', 'What shape is this?'), vis: tmShape(s[0]), opts: TM_SHAPES.map(function (x) { return x[0]; }), optLbl: (function () { var o = {}; TM_SHAPES.forEach(function (x) { o[x[0]] = tx(x[1], x[0]); }); return o; })(), ans: s[0], exp: say(s[1], 'This is a ' + s[0]) }; }
+    function genTallest() { var big = r(0, 1), h = shuf([1, 2, 3, 4, 5]).slice(0, 3), em = pk(['🌴', '🧍', '🗼']), i;
+        var ans = big ? h.indexOf(Math.max.apply(null, h)) : h.indexOf(Math.min.apply(null, h));
+        return { seq: tmSeq([big ? 'en_tm_q_tallest' : 'en_tm_q_shortest']), html: tx('أنهي واحد ' + (big ? 'الأطول' : 'الأقصر') + '؟', 'Which one is the <b>' + (big ? 'tallest' : 'shortest') + '</b>?'), vis: '<div class="sk" dir="ltr" style="align-items:flex-end">' + h.map(function (x) { return '<span style="display:inline-block;width:46px;height:' + (x * 22) + 'px;background:#6C4DF6;border-radius:8px;color:#fff;font-size:14px">' + (['A', 'B', 'C'][h.indexOf(x)]) + '</span>'; }).join('') + '</div>', opts: ['A', 'B', 'C'], ans: ['A', 'B', 'C'][ans], exp: say(big ? 'الأطول هو الأعلى' : 'الأقصر هو الأقل ارتفاع', big ? 'The tallest is the highest one' : 'The shortest is the lowest one') }; }
+    function genOnUnder() { var on = r(0, 1), e = pk(['🐱', '🐶', '⚽', '🍎']);
+        return { seq: tmSeq(['en_tm_q_onunder']), html: tx('الـ ' + B(e) + ' ' + (on ? 'فوق' : 'تحت') + ' الترابيزة ولا ' + (on ? 'تحتها' : 'فوقها') + '؟', 'Is the ' + B(e) + ' <b>on</b> or <b>under</b> the table?'), vis: '<div class="big" dir="ltr" style="line-height:1.1">' + (on ? e + '<br>🟫🟫🟫' : '🟫🟫🟫<br>' + e) + '</div>', opts: ['on', 'under'], optLbl: { on: tx('فوق', 'on'), under: tx('تحت', 'under') }, ans: on ? 'on' : 'under', exp: say(on ? 'فوق الترابيزة' : 'تحت الترابيزة', on ? 'It is on the table' : 'It is under the table') }; }
+    function genDigital() { var h = r(1, 12), m = pk([0, 15, 30, 45]), t = h + ':' + (m < 10 ? '0' : '') + m, ws = [t], g = 0;
+        while (ws.length < 4 && g++ < 60) { var x = r(1, 12) + ':' + pk(['00', '15', '30', '45']); if (ws.indexOf(x) < 0) ws.push(x); }
+        var say_ = m === 0 ? h + " o'clock" : m === 30 ? 'half past ' + h : m === 15 ? 'quarter past ' + h : 'quarter to ' + (h % 12 + 1);
+        return { seq: tmSeq(['en_tm_q_digital'], N(h), m === 0 ? ['en_tm_t_oclock'] : N(m)), html: tx('الساعة الرقمية بتقول إيه؟ ' + B(t), 'Read the digital clock: ' + B(t)), vis: '', opts: shuf(ws), ans: t, exp: say('الساعة ' + t, 'It is ' + say_) }; }
+    function genTens(op) { var a = r(1, 9) * 10, b = r(1, 9) * 10; if (op === '-') { if (b > a) { var x = a; a = b; b = x; } } else { while (a + b > 100) { a = r(1, 9) * 10; b = r(1, 9) * 10; } }
+        var ans = op === '-' ? a - b : a + b; return { html: B(a + ' ' + (op === '-' ? '−' : '+') + ' ' + b + ' = ?'), vis: blocks(a), ans: ans, exp: say((a / 10) + ' عشرات ' + (op === '-' ? 'ناقص ' : 'زائد ') + (b / 10) + ' = ' + (ans / 10) + ' عشرات = ' + ans, (a / 10) + ' tens ' + (op === '-' ? 'minus ' : 'plus ') + (b / 10) + ' tens = ' + (ans / 10) + ' tens = ' + ans) }; }
+    function genMakeNum(big) { var a = r(1, 9), b = r(1, 9); while (b === a) b = r(1, 9);
+        var hi = Math.max(a, b), lo = Math.min(a, b), ans = big ? hi * 10 + lo : lo * 10 + hi, other = big ? lo * 10 + hi : hi * 10 + lo, o = [String(ans), String(other)], g = 0;
+        while (o.length < 4 && g++ < 40) { var x = String(r(1, 9) * 10 + pk([a, b])); if (o.indexOf(x) < 0) o.push(x); }
+        return { seq: tmSeq([big ? 'en_tm_q_make_big' : 'en_tm_q_make_small'], N(a), N(b)), html: tx('كوّن ' + (big ? 'أكبر' : 'أصغر') + ' عدد من الرقمين: ' + B(a + ' ' + b), 'Make the <b>' + (big ? 'greatest' : 'smallest') + '</b> number from the two digits: ' + B(a + ' ' + b)), vis: '', opts: shuf(o), ans: String(ans), exp: say(big ? 'الرقم الأكبر في خانة العشرات' : 'الرقم الأصغر في خانة العشرات', big ? 'Put the biggest digit in the tens place' : 'Put the smallest digit in the tens place') }; }
+    function tmShape(n) { return '<div class="tshw"><i class="tsh_' + n + '"></i></div>'; }
+    function genArr(asc, hi) { hi = hi || 50; var v = []; while (v.length < 3) { var x = r(1, hi); if (v.indexOf(x) < 0) v.push(x); }
+        var s = v.slice().sort(function (a, b) { return asc ? a - b : b - a; }), ans = s.join(' , '), o = [ans], g = 0; while (o.length < 4 && g++ < 40) { var y = shuf(v).join(' , '); if (o.indexOf(y) < 0) o.push(y); }
+        return { seq: tmSeq([asc ? 'en_tm_q_arr_up' : 'en_tm_q_arr_down'], v.reduce(function (a, x) { return a.concat(N(x)); }, [])), html: tx(asc ? 'رتّب من الأصغر للأكبر: ' : 'رتّب من الأكبر للأصغر: ', asc ? 'Arrange from the smallest to the biggest: ' : 'Arrange from the biggest to the smallest: ') + B(v.join('  ')), vis: '', opts: shuf(o), ans: ans, exp: say(asc ? 'الأصغر الأول: ' + s.join('، ') : 'الأكبر الأول: ' + s.join('، '), (asc ? 'Smallest first: ' : 'Biggest first: ') + s.join(', ')) }; }
+    function genHowMany(lo, hi) { var n = r(lo, hi);
+        return { seq: tmSeq([n <= 20 ? 'en_q_n20' : 'en_tm_q_howmany']), html: tx(n <= 20 ? 'عدّ النقط. كام نقطة؟' : 'كام الكل؟', n <= 20 ? 'Count the dots. How many?' : 'How many in all?'), vis: n <= 20 ? dots(n) : blocks(n), ans: n, exp: say(n + ' = ' + (n >= 20 ? Math.floor(n / 10) + ' عشرات و ' + (n % 10) + ' آحاد' : 'عدّ واحدة واحدة'), n + ' = ' + (n >= 20 ? Math.floor(n / 10) + ' tens and ' + (n % 10) + ' ones' : 'count one by one')) }; }
+    function genMissing(lo, hi, tensOnly) { var n = tensOnly ? r(Math.floor(lo / 10), Math.floor(hi / 10)) * 10 : r(lo, hi), w = tmWord(n).replace('-', ''), k = r(0, w.length - 1), ch = w.charAt(k), o = [ch], g = 0, A = 'abcdefghijklmnopqrstuvwxyz';
+        while (o.length < 4 && g++ < 60) { var x = A.charAt(r(0, 25)); if (o.indexOf(x) < 0) o.push(x); }
+        return { seq: tmSeq(['en_tm_q_missing'], N(n)), html: tx('الحرف الناقص في كلمة ' + B(n) + ': ', 'Which letter is missing in ' + B(n) + '? ') + '<span class="big" dir="ltr">' + w.substr(0, k) + '_' + w.substr(k + 1) + '</span>', vis: '', opts: shuf(o), ans: ch, exp: say(n + ' = ' + w.split('').join(' '), n + ' is spelled ' + w.split('').join(' ')) }; }
+    function genTensCount() { var n = r(1, 10) * 10;
+        return { seq: tmSeq(['en_tm_q_howmany']), html: tx('كام الكل؟', 'How many in all?'), vis: blocks(n), ans: n, exp: say((n / 10) + ' عشرات = ' + n, (n / 10) + ' tens = ' + n) }; }
+    var TM_GEN = { numword: genNumWord, wordnum: genWordNum, ba: genBefore, ord: genOrdinal, day: genDay, month: genMonth, shape: genShape, tall: genTallest, onunder: genOnUnder, digital: genDigital, tens: genTens, make: genMakeNum };
+
+
+    /* ---------- Top Math data ---------- */
+    var TMU = {"t1":[["Numbers (1 - 10)","num","1f522","الأعداد من ١ لـ ١٠"],["Numbers (11 - 20)","num","1f522","الأعداد من ١١ لـ ٢٠"],["More - Less - Equal","cmp","2696","أكتر - أقل - يساوي"],["Test","test","1f3c6","اختبار"],["Numbers (21 - 30)","num","1f522","٢١ لـ ٣٠"],["Test","test","1f3c6","اختبار"],["Between and After","ord","1f517","بين وبعد"],["Before","ord","2b05","قبل"],["The number line strategies","nl","1f4cf","خط الأعداد"],["Test","test","1f3c6","اختبار"],["Arrange ascending","ord","1f4c8","رتّب تصاعدي"],["Test","test","1f3c6","اختبار"],["Test","test","1f3c6","اختبار"],["Numbers (31 - 35)","num","1f522","٣١ لـ ٣٥"],["Numbers (36 - 40)","num","1f522","٣٦ لـ ٤٠"],["More than - less than","cmp","2696","أكبر من - أصغر من"],["Numbers (40 - 45)","num","1f522","٤٠ لـ ٤٥"],["Numbers (45 - 50)","num","1f522","٤٥ لـ ٥٠"],["Revision (1 - 50)","rev","1f501","مراجعة"],["Test","test","1f3c6","اختبار"],["Test","test","1f3c6","اختبار"],["Number letters (1 - 4)","let","1f524","كتابة الأرقام بالحروف"],["Test","test","1f3c6","اختبار"],["Addition","op","2795","الجمع"],["Test","test","1f3c6","اختبار"],["Number letters (5 - 7)","let","1f524","حروف الأرقام"],["Number letters (8 - 10)","let","1f524","حروف الأرقام"],["Number letters (11)","let","1f524","حروف الأرقام"],["Number letters (12)","let","1f524","حروف الأرقام"],["Test","test","1f3c6","اختبار"],["Numbers (50 - 59)","num","1f522","٥٠ لـ ٥٩"],["Numbers (60 - 69)","num","1f522","٦٠ لـ ٦٩"],["Numbers (70 - 79)","num","1f522","٧٠ لـ ٧٩"],["Numbers (80 - 89)","num","1f522","٨٠ لـ ٨٩"],["Test","test","1f3c6","اختبار"],["Minus","op","2796","الطرح"],["Test","test","1f3c6","اختبار"],["Numbers (90 - 100)","num","1f4af","٩٠ لـ ١٠٠"],["Final exams","exam","1f393","الامتحان النهائي"],["Model (1)","model","1f4dd","نموذج ١"],["Model (2)","model","1f4dd","نموذج ٢"],["Model (3)","model","1f4dd","نموذج ٣"],["Model (4)","model","1f4dd","نموذج ٤"],["Model (5)","model","1f4dd","نموذج ٥"],["Model (6)","model","1f4dd","نموذج ٦"]],"t2":[["Revision","rev","1f501","مراجعة"],["Tallest and shortest","vis","1f4cf","الأطول والأقصر"],["Test","test","1f3c6","اختبار"],["Arrange descending","ord","1f4c9","رتّب تنازلي"],["Number letters (11 - 13)","let","1f524","حروف الأرقام"],["Number letters (14 - 16)","let","1f524","حروف الأرقام"],["Test","test","1f3c6","اختبار"],["Number letters (17 - 19)","let","1f524","حروف الأرقام"],["Number letters (20 - 40)","let","1f524","حروف الأرقام"],["Number letters (50 - 70)","let","1f524","حروف الأرقام"],["Shapes","vis","1f536","الأشكال"],["Number letters (70 - 90)","let","1f524","حروف الأرقام"],["Tens","num","1f51f","العشرات"],["Add tens","op","2795","جمع العشرات"],["Subtract tens","op","2796","طرح العشرات"],["Tens - ones","num","1f9f1","عشرات وآحاد"],["Test","test","1f3c6","اختبار"],["Compare 2 digits numbers","cmp","2696","قارن عددين"],["Making greatest / smallest 2 digits","cmp","1f522","أكبر وأصغر عدد"],["Test","test","1f3c6","اختبار"],["Add 2-digit number","op","2795","جمع عددين"],["Subtract 2-digit number","op","2796","طرح عددين"],["Revision","rev","1f501","مراجعة"],["Test","test","1f3c6","اختبار"],["Money","life","1f4b0","الفلوس"],["Count money","life","1fa99","عدّ الفلوس"],["On - under","vis","2195","فوق - تحت"],["What's the time","life","23f0","الساعة كام؟"],["Digital clock","life","1f552","الساعة الرقمية"],["Fractions","life","1f355","الكسور"],["Ordinal numbers","ord","1f947","الترتيب: الأول والتاني"],["Day of the week","life","1f4c5","أيام الأسبوع"],["Months of the year","life","1f5d3","شهور السنة"],["Final exams","exam","1f393","الامتحان النهائي"],["Model (1)","model","1f4dd","نموذج ١"],["Model (2)","model","1f4dd","نموذج ٢"],["Model (3)","model","1f4dd","نموذج ٣"],["Model (4)","model","1f4dd","نموذج ٤"],["Model (5)","model","1f4dd","نموذج ٥"],["Model (6)","model","1f4dd","نموذج ٦"],["Model (7)","model","1f4dd","نموذج ٧"],["Model (8)","model","1f4dd","نموذج ٨"],["Model (9)","model","1f4dd","نموذج ٩"],["Model (10)","model","1f4dd","نموذج ١٠"]]};
+    var TM_CSS = ".tabs3{display:flex;gap:4px;background:rgba(0,0,0,.22);border-radius:20px;padding:4px;margin:10px 0 6px}.tabs3 button{flex:1;border:none;border-radius:16px;padding:7px 2px;font:inherit;font-weight:900;font-size:13px;background:transparent;color:#fff;line-height:1.1}.tabs3 button small{display:block;font-size:10px;opacity:.85;font-weight:700}.tabs3 button.on{background:#fff;color:#0F766E;box-shadow:0 4px 0 rgba(0,0,0,.15)} .tmh{background:linear-gradient(165deg,#0F766E,#14B8A6 60%,#5EEAD4)!important;box-shadow:0 10px 0 #BDF0E8!important} .terms{display:flex;gap:8px;margin:12px 16px 0}.terms button{flex:1;border:3px solid #BDF0E8;background:#fff;border-radius:18px;padding:9px;font:inherit;font-weight:900;color:#0F766E;font-size:15px}.terms button.on{background:#0F766E;color:#fff;border-color:#0F766E;box-shadow:0 5px 0 #0A524C} .bookline{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);border-radius:16px;padding:7px 12px;font-weight:800;font-size:13px;margin-top:8px}.bookline b{font-size:15px} .tcl{margin:26px 16px 2px;display:flex;align-items:center;gap:8px;font-weight:900;color:#0F766E;font-size:15px}.tcl:after{content:\"\";flex:1;height:4px;border-radius:2px;background:#BDF0E8}.tcl i{font-style:normal;background:#0F766E;color:#fff;border-radius:12px;padding:3px 9px;font-size:12px} .tmn .n{width:70px;height:70px;font-size:30px}.ub{position:absolute;top:-6px;right:-10px;background:#fff;color:#0F766E;border-radius:10px;font-size:11px;font-weight:900;padding:2px 6px;box-shadow:0 2px 0 rgba(0,0,0,.2)} .tmn .n.test{background:linear-gradient(160deg,#FFE27A,#FBBF24);box-shadow:0 7px 0 #B7791F,inset 0 0 0 4px #fff} .tmn .n.exam{background:linear-gradient(160deg,#FF8A8A,#EF4444);box-shadow:0 7px 0 #991B1B,inset 0 0 0 4px #fff} .tmn .n.model{background:linear-gradient(160deg,#C4B5FD,#8B5CF6);box-shadow:0 7px 0 #5B21B6,inset 0 0 0 4px #fff} .tmn .n.rev{background:linear-gradient(160deg,#93C5FD,#3B82F6);box-shadow:0 7px 0 #1E3A8A,inset 0 0 0 4px #fff} .tmn .nl small{display:block;font-size:11px;opacity:.85;font-weight:800;color:#0F766E}.tmn .nl{color:#134E4A!important;text-shadow:none!important} .legend{display:flex;flex-wrap:wrap;gap:6px;margin:12px 16px 0}.legend span{font-size:11px;font-weight:900;color:#fff;border-radius:10px;padding:3px 8px} .sheetb{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:30px 30px 0 0;padding:18px 18px 22px;box-shadow:0 -10px 0 rgba(0,0,0,.12);z-index:20000;color:#2B2350} .tsteps{display:flex;gap:6px;margin:12px 0}.tsteps div{flex:1;text-align:center;background:#F0FDFA;border-radius:14px;padding:8px 2px;font-weight:900;font-size:11px;color:#0F766E}.tsteps b{display:block;font-size:20px} .lt{display:flex;gap:8px;justify-content:center;margin:12px 0}.lt span{width:56px;height:64px;border-radius:16px;background:#FDF2F8;border:3px solid #F9A8D4;font-size:34px;font-weight:900;color:#BE185D;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 0 #F9A8D4;text-transform:lowercase}.lt span.e{background:#fff;border:3px dashed #F9A8D4;box-shadow:none;color:transparent} .big1{font-size:90px;font-weight:900;color:#6C4DF6;text-align:center;line-height:1}.dots{display:flex;gap:6px;justify-content:center;margin:6px 0}.dots i{width:22px;height:22px;border-radius:50%;background:#FF9F43} .cpt .hero,.cpt .bookline{display:none}.hh.cpt{padding-bottom:12px}.tsc b,.tsc small,.tsc .cnt{color:#134E4A!important;text-shadow:none!important}.tsc small{color:#0F766E!important}.tsc .cnt{color:#64748B!important}.hero.mini{display:flex} .tscs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 16px 24px} .tsc{background:#fff;border-radius:24px;padding:14px 12px 12px;box-shadow:0 7px 0 #BDF0E8;border:3px solid #E6FAF6;position:relative;text-align:center;color:#134E4A} .tsc .si{width:58px;height:58px;border-radius:20px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center}.tsc .si img{width:34px;height:34px} .tsc b{display:block;font-size:15px;line-height:1.2}.tsc small{display:block;font-weight:800;color:#0F766E;font-size:12px;margin-top:2px} .tsc .pb{height:8px;border-radius:5px;background:#E6FAF6;margin:8px 4px 4px;overflow:hidden}.tsc .pb i{display:block;height:100%;background:#14B8A6} .tsc .cnt{font-size:11px;font-weight:900;color:#64748B} .tsc .dts{display:flex;gap:3px;justify-content:center;margin-top:5px}.tsc .dts i{width:9px;height:9px;border-radius:50%} .tsc.rec{border-color:#FBBF24}.tsc.rec:before{content:\"Start here \u25b6\";position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#FBBF24;color:#5B3A00;font-size:11px;font-weight:900;border-radius:10px;padding:2px 9px;white-space:nowrap} .tsc.wide{grid-column:span 2;display:flex;align-items:center;gap:12px;text-align:left}.tsc.wide .si{margin:0;flex:none}.tsc.wide>div{flex:1} .tsh{display:flex;align-items:center;gap:10px;margin:14px 16px 0;color:#fff}.tsh .bk{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.25);border:none;color:#fff;font-size:22px;font-weight:900} .tsh div b{font-size:19px;display:block}.tsh div small{font-weight:800;opacity:.9} .chips{display:flex;gap:6px;overflow:hidden;margin:10px 16px 0}.chips span{flex:none;background:#fff;border:3px solid #BDF0E8;color:#0F766E;border-radius:14px;padding:5px 10px;font-weight:900;font-size:12px}.chips span.on{background:#0F766E;color:#fff;border-color:#0F766E} .hlab{margin:16px 16px 0;font-weight:900;color:#0F766E;font-size:16px}";
+
+
+    /* ---------- Top Math: levels (book order), sections, UI ---------- */
+    var PP = null, TMLV = [], TMSEC = { 1: [], 2: [] };
+    var TM_SECDEF = {
+        1: [['Numbers 1 - 20', 'أعداد ١ لـ ٢٠', '1f522', '#6C4DF6', 0, 4, '1-20'], ['Numbers 21 - 50', 'أعداد ٢١ لـ ٥٠ وخط الأعداد', '1f4cf', '#14B8A6', 4, 21, '21-50'], ['Number letters & Add', 'حروف الأرقام والجمع', '1f524', '#EC4899', 21, 30, 'Letters'], ['Numbers 50 - 100 & Minus', '٥٠ لـ ١٠٠ والطرح', '2796', '#FF9F43', 30, 38, '50-100'], ['Final Exam & Models', 'الامتحان والنماذج', '1f3c6', '#EF4444', 38, 45, 'Exams']],
+        2: [['Order & letters 11-19', 'ترتيب وحروف الأرقام', '1f524', '#EC4899', 0, 9, 'Letters'], ['Shapes & Tens', 'الأشكال والعشرات', '1f4d0', '#F43F5E', 9, 17, 'Shapes'], ['Compare & 2-digit math', 'مقارنة وجمع وطرح', '2696', '#22C55E', 17, 24, 'Compare'], ['Money, Time & Words', 'فلوس وساعة وأيام وشهور', '23f0', '#84CC16', 24, 33, 'Time'], ['Final Exam & Models', 'الامتحان والنماذج', '1f3c6', '#EF4444', 33, 44, 'Exams']]
+    };
+    var TM_COL = { num: '#6C4DF6', cmp: '#22C55E', ord: '#0EA5E9', nl: '#14B8A6', op: '#FF9F43', let: '#EC4899', vis: '#F43F5E', life: '#84CC16', test: '#FBBF24', rev: '#3B82F6', exam: '#EF4444', model: '#8B5CF6' };
+    TM_CSS += '.tmn{padding-top:34px}.tshw,.tbars{margin-bottom:48px}.tsc{font:inherit;cursor:pointer;color:#134E4A}.lgs button[data-tab]{font-size:13px}.tshw{display:flex;justify-content:center;margin:6px 0}.tshw i{display:block;background:#6C4DF6}.tsh_circle{width:84px;height:84px;border-radius:50%;background:#FF9F43!important}.tsh_square{width:80px;height:80px;border-radius:8px;background:#22C55E!important}.tsh_rectangle{width:130px;height:70px;border-radius:8px;background:#0EA5E9!important}.tsh_triangle{width:0;height:0;background:transparent!important;border-left:48px solid transparent;border-right:48px solid transparent;border-bottom:84px solid #F43F5E}'
+        + '.tw{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;direction:ltr}.twr{display:flex;align-items:center;gap:8px;background:#F5F1FF;border-radius:14px;padding:6px 10px;font-weight:900;font-size:18px}.twr b{font-size:24px;color:#6C4DF6;min-width:34px}.twr span{color:#BE185D}'
+        + '.lt{display:flex;gap:6px;justify-content:center;margin:10px 0;direction:ltr;flex-wrap:wrap}.lt span{width:46px;height:54px;border-radius:14px;background:#FDF2F8;border:3px solid #F9A8D4;font-size:30px;font-weight:900;color:#BE185D;display:flex;align-items:center;justify-content:center}'
+        + '.tbig{font-size:64px;font-weight:900;color:#6C4DF6;text-align:center;line-height:1.1;direction:ltr}.tbars{display:flex;gap:14px;justify-content:center;align-items:flex-end;direction:ltr;margin:8px 0}.tbars i{display:block;width:44px;border-radius:10px;background:#6C4DF6}'
+        + '.tmn .nl small{display:block;font-size:11px;opacity:.85;font-weight:800;color:#0F766E}.tmn .nl{color:#134E4A!important;text-shadow:none!important}.tmn .nd .nst{margin-top:2px}';
+    var tmCss = false;
+    function injectTm() { if (tmCss) return; tmCss = true; var s = document.createElement('style'); s.textContent = TM_CSS; document.head.appendChild(s); }
+    function tmChips(a) { return skip2(a); }
+    function tmRange(lo, hi) { var a = []; for (var i = lo; i <= hi; i++) a.push(i); return a; }
+    function letterTiles(w) { return '<div class="lt">' + w.replace('-', '').split('').map(function (c) { return '<span>' + c + '</span>'; }).join('') + '</div>'; }
+    function spell(w) { return w.replace('-', '').split('').join(', '); }
+    function twRows(ns) { return '<div class="tw">' + ns.map(function (n) { return '<div class="twr"><b>' + n + '</b><span>' + tmWord(n) + '</span></div>'; }).join('') + '</div>'; }
+
+    function numPages(lo, hi) {
+        var s = lo + Math.floor((hi - lo) / 2), a = Math.max(0, lo - 1), b = hi + 1, p = [];
+        p.push(say('النهاردة هنتعلم الأعداد من ' + lo + ' لـ ' + hi + '. تعالى نشوفهم!', 'Today we learn the numbers from ' + lo + ' to ' + hi + '. Let us look at them!') + tmChips(tmRange(lo, Math.min(hi, lo + 10))));
+        if (s <= 20) p.push(say('بص! ده الرقم ' + s + '. عدّ النقط معايا.', 'Look! This is the number ' + s + '. Count the dots with me.') + dots(s) + stp(tmRange(1, s).join(' , ') + ' → <b>' + s + '</b>'));
+        else p.push(say('العدد ' + s + ' هو ' + Math.floor(s / 10) + ' عشرات و ' + (s % 10) + ' آحاد.', 'The number ' + s + ' is ' + Math.floor(s / 10) + ' tens and ' + (s % 10) + ' ones.') + blocks(s) + stp(s + ' = ' + Math.floor(s / 10) * 10 + ' + ' + (s % 10)));
+        p.push(say('على خط الأعداد، كل رقم أكبر من اللي قبله بواحد. بعد ' + s + ' بييجي ' + (s + 1) + '.', 'On the number line, each number is one more than the one before. After ' + s + ' comes ' + (s + 1) + '.') + nline(a, b, { start: s, end: Math.min(s + 1, b), auto: 1 }));
+        p.push(say('يلا نقولهم مع بعض بالترتيب!', 'Let us say them together, in order!') + tmChips(tmRange(lo, Math.min(hi, lo + 10))) + (hi - lo > 10 ? tmChips(tmRange(lo + 11, hi)) : ''));
+        return p;
+    }
+    function letPages(ns, tens) {
+        var n0 = ns[0], w0 = tmWord(n0), nl = ns[ns.length - 1], wl = tmWord(nl), p = [];
+        p.push(say('نقدر نكتب الأرقام بالحروف. الرقم ' + n0 + ' بيتكتب <bdi>' + w0 + '</bdi> بالحروف.', 'We can write numbers with letters. The number ' + n0 + ' is written ' + w0 + '.') + '<div class="tbig">' + n0 + '</div>' + letterTiles(w0));
+        p.push(say('بص على كل رقم وكلمته. قولهم معايا!', 'Look at each number and its word. Say them with me!') + twRows(ns.slice(0, 8)));
+        p.push(say('نتهجّى <bdi>' + wl + '</bdi> مع بعض: <bdi>' + spell(wl) + '</bdi> حرف حرف.', 'Let us spell ' + wl + ' together: ' + spell(wl) + '.') + '<div class="tbig">' + nl + '</div>' + letterTiles(wl) + stp(wl));
+        return p;
+    }
+    function baPages(kind) {
+        if (kind === 'ba') return [
+            say('"بين" معناها في النص. بين 4 و 6 بييجي 5.', 'Between means in the middle. Between 4 and 6 comes 5.') + tmChips([4, '<b>5</b>', 6]),
+            say('"بعد" معناها الرقم اللي بييجي ورا. بعد 7 بييجي 8.', 'After means the next number. After 7 comes 8.') + tmChips([7, '<b>8</b>']) + nline(5, 10, { start: 7, end: 8, auto: 1 }),
+            say('جرب بنفسك: إيه الرقم اللي بعد 12؟ بص على خط الأعداد.', 'Try it yourself: what comes after 12? Look at the number line.') + nline(10, 15, {})];
+        return [
+            say('"قبل" معناها الرقم اللي قبله على طول. قبل 9 بييجي 8.', 'Before means the number just behind. Before 9 comes 8.') + tmChips([8, '<b>9</b>']) + nline(6, 11, { start: 9, end: 8, auto: 1 }),
+            say('قبل 15 بييجي 14. بنرجع خطوة لورا.', 'Before 15 comes 14. We step one back.') + tmChips([14, '<b>15</b>']),
+            say('الرقم اللي في النص بين رقمين هو اللي قبل الكبير وبعد الصغير.', 'The middle number is after the small one and before the big one.') + tmChips([11, '<b>12</b>', 13])];
+    }
+    function arrPages(asc) {
+        return asc ? [
+            say('تصاعدي معناها من الأصغر للأكبر. زي السلم وانت طالع!', 'Ascending means from the smallest to the biggest, like climbing stairs!') + tmChips([2, 5, 8, 11]),
+            say('رتّب 9 و 3 و 6 تصاعدي: أصغر رقم أول واحد، وهو 3.', 'Arrange 9, 3 and 6 in ascending order: the smallest comes first, that is 3.') + stp('3 , 6 , 9')] : [
+            say('تنازلي معناها من الأكبر للأصغر. زي السلم وانت نازل!', 'Descending means from the biggest to the smallest, like going down stairs!') + tmChips([11, 8, 5, 2]),
+            say('رتّب 9 و 3 و 6 تنازلي: أكبر رقم أول واحد، وهو 9.', 'Arrange 9, 3 and 6 in descending order: the biggest comes first, that is 9.') + stp('9 , 6 , 3')];
+    }
+    function tmPages(k) {
+        var T = {
+            tall: [say('الطويل معناه عالي، والقصير معناه واطي. الزرافة طويلة والفار قصير.', 'Tall means high, and short means low. The giraffe is tall and the mouse is short.') + '<div class="tbig">🦒 🐭</div>',
+                say('الأطول هو الأعلى من الكل، والأقصر هو الأوطى من الكل.', 'The tallest is the highest of all, and the shortest is the lowest of all.') + '<div class="tbars"><i style="height:50px"></i><i style="height:110px"></i><i style="height:80px"></i></div>'],
+            shapes: [say('الأشكال حوالينا في كل مكان. هنقابل أربع أشكال: دايرة ومربع ومثلث ومستطيل.', 'Shapes are all around us. Let us meet four shapes: circle, square, triangle and rectangle.') + tmShape('circle') + tmShape('square'),
+                say('الدايرة مدورة ومفيهاش زوايا. المربع له أربع أضلاع متساوية.', 'A circle is round and has no corners. A square has four equal sides.') + tmShape('circle') + tmShape('square'),
+                say('المثلث له ثلاث أضلاع. المستطيل له أربع أضلاع، اتنين طويلين واتنين قصيرين.', 'A triangle has three sides. A rectangle has four sides, two long and two short.') + tmShape('triangle') + tmShape('rectangle')],
+            onunder: [say('"فوق" معناها على الحاجة. القطة فوق الترابيزة.', 'On means above, touching. The cat is on the table.') + '<div class="tbig" style="font-size:44px;line-height:1.1">🐱<br>🟫🟫🟫</div>',
+                say('"تحت" معناها أسفل الحاجة. الكورة تحت الترابيزة.', 'Under means below. The ball is under the table.') + '<div class="tbig" style="font-size:44px;line-height:1.1">🟫🟫🟫<br>⚽</div>'],
+            digital: [say('الساعة الرقمية بتكتب الساعات وبعدين الدقايق. 3:00 يعني الساعة تلاتة بالظبط.', 'A digital clock shows the hour, then the minutes. 3:00 means three o\'clock.') + '<div class="tbig">3:00</div>',
+                say('4:30 يعني أربعة ونص. الدقايق 30 هي النص.', '4:30 means half past four. Thirty minutes is a half.') + '<div class="tbig">4:30</div>',
+                say('7:15 يعني سبعة وربع. الدقايق 15 هي الربع.', '7:15 means quarter past seven. Fifteen minutes is a quarter.') + '<div class="tbig">7:15</div>'],
+            tens: [say('عشر آحاد بيكوّنوا عشرة واحدة. العشرة شكلها عصاية.', 'Ten ones make one ten. A ten looks like a rod.') + blocks(10),
+                say('نعد بالعشرات: 10 و 20 و 30 لحد 100.', 'Count by tens: 10, 20, 30, up to 100.') + tmChips([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]),
+                say('تلات عشرات يساووا 30.', 'Three tens make 30.') + blocks(30) + stp('3 tens = 30')],
+            addtens: [say('نجمع العشرات زي ما نجمع الآحاد! 2 عشرات و 3 عشرات = 5 عشرات.', 'We add tens just like ones! 2 tens plus 3 tens is 5 tens.') + blocks(50) + stp('20 + 30 = 50'),
+                say('40 + 10: أربع عشرات وعشرة واحدة = خمس عشرات = 50.', '40 + 10: four tens and one ten is five tens, that is 50.') + stp('40 + 10 = 50')],
+            subtens: [say('نطرح العشرات زي ما نطرح الآحاد! 5 عشرات ناقص 2 عشرات = 3 عشرات.', 'We subtract tens just like ones! 5 tens minus 2 tens is 3 tens.') + blocks(50) + stp('50 − 20 = 30'),
+                say('80 − 30: تمان عشرات ناقص تلات عشرات = خمس عشرات = 50.', '80 − 30: eight tens minus three tens is five tens, that is 50.') + stp('80 − 30 = 50')],
+            make: [say('عشان نكوّن أكبر عدد، نحط الرقم الأكبر في خانة العشرات. الرقمين 3 و 7: الأكبر 73.', 'To make the greatest number, put the biggest digit in the tens place. With 3 and 7, the greatest is 73.') + stp('3 , 7 → <b>73</b>'),
+                say('وعشان نكوّن أصغر عدد، نحط الرقم الأصغر في خانة العشرات. الأصغر 37.', 'To make the smallest number, put the smallest digit in the tens place. The smallest is 37.') + stp('3 , 7 → <b>37</b>')],
+            ord: [say('الأرقام الترتيبية بتقول مكان الحاجة: الأول والتاني والتالت.', 'Ordinal numbers tell the place of something: first, second, third.') + tmChips(['1st', '2nd', '3rd', '4th', '5th']),
+                say('وكمان: السادس والسابع والتامن والتاسع والعاشر.', 'And also: sixth, seventh, eighth, ninth and tenth.') + tmChips(['6th', '7th', '8th', '9th', '10th'])],
+            day: [say('الأسبوع فيه سبع أيام.', 'A week has seven days.') + tmChips(TM_DAYS.map(function (d) { return d[0].slice(0, 3); })),
+                say('الأيام بتيجي دايماً بنفس الترتيب، وبعد الجمعة بنبدأ من السبت تاني.', 'The days always come in the same order, and after Friday we start again with Saturday.') + tmChips(TM_DAYS.map(function (d) { return d[0].slice(0, 3); }))],
+            month: [say('السنة فيها اتناشر شهر.', 'A year has twelve months.') + tmChips(TM_MONTHS.slice(0, 6).map(function (d) { return d[0].slice(0, 3); })) + tmChips(TM_MONTHS.slice(6).map(function (d) { return d[0].slice(0, 3); })),
+                say('بعد يناير بييجي فبراير، وبعد ديسمبر بنبدأ سنة جديدة.', 'After January comes February, and after December a new year starts.') + tmChips(['Jan', 'Feb', 'Mar'])]
+        };
+        return T[k];
+    }
+    function tmPoolPage(kind) {
+        var m = { test: ['وقت الاختبار! نشوف إنت فاكر إيه من الدروس اللي فاتت. خد وقتك.', 'Test time! Let us see what you remember from the last few units. Take your time.'], rev: ['وقت المراجعة! هنرجع على اللي اتعلمناه.', 'Revision time! Let us go back over what we learned.'], exam: ['ده الامتحان النهائي! كل الترم مخلوط. أنا واثق فيك!', 'This is the final exam! The whole term is mixed together. I believe in you!'], model: ['ده نموذج امتحان للتدريب. عامله زي الامتحان بالظبط!', 'This is a practice exam model. Treat it like the real exam!'] }[kind];
+        return [say(m[0], m[1])];
+    }
+
+    function tmUnit(t, i, u, id, ico) {
+        var ttl = u[0], ty = u[1], m, L = function (pages, gen, base, mc) { var l = lvl(id, ico, ttl, u[3], pages, gen, mc !== false); l.tm = 1; l.clip = base || null; return l; }, reuse = function (p, gen) { return L(p.learn, gen || p.gen, p.id); };
+        if ((m = ttl.match(/^Numbers \((\d+) ?- ?(\d+)\)/))) { var lo = +m[1], hi = +m[2]; return L(numPages(lo, hi), function () { return r(0, 3) === 0 ? genBefore([0, 1, 2], hi) : genHowMany(lo, hi); }); }
+        if ((m = ttl.match(/^Number letters \((\d+)(?: ?- ?(\d+))?\)/))) { var a = +m[1], b = m[2] ? +m[2] : a, tens = a >= 20, ns = []; if (tens) for (var x = a; x <= b; x += 10) ns.push(x); else ns = tmRange(a, b);
+            return L(letPages(ns, tens), function () { var q = r(0, 2); return q === 0 ? genNumWord(a, b) : q === 1 ? genWordNum(a, b) : genMissing(a, b, tens); }); }
+        if (ttl === 'More - Less - Equal') return reuse(PP.cmp, function () { return genCmp(20, true); });
+        if (ttl === 'More than - less than') return reuse(PP.cmp, function () { return genCmp(50, true); });
+        if (ttl === 'Compare 2 digits numbers') return reuse(PP.cmp, function () { return genCmp(99, true); });
+        if (ttl === 'Between and After') return L(baPages('ba'), function () { return genBefore([1, 2], 30); });
+        if (ttl === 'Before') return L(baPages('before'), function () { return genBefore([0, 2], 30); });
+        if (ttl === 'The number line strategies') return reuse(PP.nl);
+        if (ttl === 'Arrange ascending') return L(arrPages(1), function () { return genArr(1, 50); });
+        if (ttl === 'Arrange descending') return L(arrPages(0), function () { return genArr(0, 99); });
+        if (ttl === 'Addition') return reuse(PP.a1);
+        if (ttl === 'Minus') return reuse(PP.s1);
+        if (ttl === 'Tallest and shortest') return L(tmPages('tall'), genTallest);
+        if (ttl === 'Shapes') return L(tmPages('shapes'), genShape);
+        if (ttl === "On - under") return L(tmPages('onunder'), genOnUnder);
+        if (ttl === 'Tens') return L(tmPages('tens'), genTensCount);
+        if (ttl === 'Add tens') return L(tmPages('addtens'), function () { return genTens('+'); });
+        if (ttl === 'Subtract tens') return L(tmPages('subtens'), function () { return genTens('-'); });
+        if (ttl === 'Tens - ones') return reuse(PP.exp2);
+        if (ttl.indexOf('Making greatest') === 0) return L(tmPages('make'), function () { return genMakeNum(r(0, 1)); });
+        if (ttl === 'Add 2-digit number') return reuse(PP.a4);
+        if (ttl === 'Subtract 2-digit number') return reuse(PP.s4);
+        if (ttl === 'Money' || ttl === 'Count money') return reuse(PP.mo);
+        if (ttl === "What's the time") return reuse(PP.tm);
+        if (ttl === 'Digital clock') return L(tmPages('digital'), genDigital);
+        if (ttl === 'Fractions') return reuse(PP.f1);
+        if (ttl === 'Ordinal numbers') return L(tmPages('ord'), genOrdinal);
+        if (ttl === 'Day of the week') return L(tmPages('day'), genDay);
+        if (ttl === 'Months of the year') return L(tmPages('month'), genMonth);
+        var kind = ty === 'exam' ? 'exam' : ty === 'model' ? 'model' : ty === 'rev' ? 'rev' : 'test';
+        var l = L(tmPoolPage(kind), function () { return genHowMany(1, 10); }, 'tm' + kind); l.pool = kind; return l;
+    }
+    function tmBuild() {
+        TMLV = []; TMSEC = { 1: [], 2: [] };
+        [1, 2].forEach(function (t) {
+            var lv = TMU['t' + t].map(function (u, i) { var l = tmUnit(t, i, u, 'tm' + t + '_' + (i + 1), String.fromCodePoint(parseInt(u[2], 16))); l.tmType = u[1]; l.tmTerm = t; l.tmIdx = i; l.tmTitle = u[0]; return l; });
+            var content = lv.filter(function (l) { return !l.pool; }), mi = 0;
+            lv.forEach(function (l, i) {
+                if (!l.pool) return;
+                var before = content.filter(function (c) { return c.tmIdx < i; }), pool;
+                if (l.pool === 'test') pool = before.slice(-5); else if (l.pool === 'rev') pool = before; else if (l.pool === 'exam') pool = content; else { var st = (mi++ * 5) % content.length; pool = []; for (var k = 0; k < 12; k++) pool.push(content[(st + k) % content.length]); }
+                if (!pool.length) pool = content.slice(0, 3);
+                l.gen = function () { var q = pk(pool).gen(); return q; };
+                l.pools = pool.length;
+            });
+            TM_SECDEF[t].forEach(function (s, k) {
+                var sec = { id: 'tms' + t + k, en: s[0], ar: s[1], ico: '', levels: lv.slice(s[4], s[5]), tmSec: k }; TMSEC[t].push(sec);
+                sec.levels.forEach(function (l, j) { l.track = sec; l.idx = j; l.tmSecIdx = k; });
+            });
+            TMSEC[t].forEach(function (sec, k) { var nx = TMSEC[t][k + 1]; if (nx) sec.nextTrack = nx; });
+            TMLV = TMLV.concat(lv);
+        });
+    }
+    function tmEmoji(hex) { return '<img class="em" alt="" src="img/e/' + hex + '.svg" onerror="this.style.display=\'none\'">'; }
+    function tmHead(t, compactSecHead) {
+        var L = TMLV.filter(function (l) { return l.tmTerm === t; }), done = L.filter(function (l) { return starsOf(l) >= 1; }).length, tot = TMLV.reduce(function (s, l) { return s + starsOf(l); }, 0);
+        return '<div class="hh tmh cpt"><div class="tbr"><div class="chip">⭐ ' + tot + '</div><div class="logo"><b>Top Math</b><small>منهج الكتاب المدرسي</small></div><button class="gear" id="mc" aria-label="settings">⚙️</button></div>'
+            + '<div class="tabs3"><button data-tab="ar">رياضيات بالعربي<small>Arabic Math</small></button><button data-tab="en">Math in English<small>رياضيات بالإنجليزي</small></button><button class="on">Top Math 📘<small>الكتاب المدرسي</small></button></div>'
+            + '<div class="ov"><i style="width:' + Math.round(done / L.length * 100) + '%"></i></div><div class="ovt">' + done + ' / ' + L.length + ' units done · Foundation / KG</div></div>';
+    }
+    function tmMap() {
+        injectTm(); var t = state.tmTerm || 1, sk = state.tmSec, nm = kidName(), secs = TMSEC[t], L = TMLV.filter(function (l) { return l.tmTerm === t; });
+        var nxt = L.filter(function (l) { return !starsOf(l); })[0] || L.filter(function (l) { return starsOf(l) < 3; })[0], h;
+        if (sk == null || !secs[sk]) {
+            h = tmHead(t) + '<div class="terms"><button data-term="1" class="' + (t === 1 ? 'on' : '') + '">First term<br><small>45 units</small></button><button data-term="2" class="' + (t === 2 ? 'on' : '') + '">Second term<br><small>44 units</small></button></div>'
+                + '<div class="hlab">Choose a section ' + tmEmoji('1f447') + '</div><div class="tscs">';
+            secs.forEach(function (sec, k) {
+                var s = TM_SECDEF[t][k], n = sec.levels.length, dn = sec.levels.filter(function (l) { return starsOf(l) >= 1; }).length, types = [], rec = nxt && nxt.tmSecIdx === k;
+                sec.levels.forEach(function (l) { if (types.indexOf(l.tmType) < 0) types.push(l.tmType); });
+                h += '<button class="tsc ' + (rec ? 'rec' : '') + (k === secs.length - 1 && secs.length % 2 ? ' wide' : '') + '" data-sec="' + k + '"><div class="si" style="background:' + s[3] + '22">' + tmEmoji(s[2]) + '</div><div><b>' + s[0] + '</b><small>' + s[1] + '</small><div class="pb"><i style="width:' + Math.round(dn / n * 100) + '%"></i></div><div class="cnt">' + dn + ' / ' + n + ' units</div><div class="dts">' + types.slice(0, 6).map(function (x) { return '<i style="background:' + TM_COL[x] + '"></i>'; }).join('') + '</div></div></button>';
+            });
+            h += '</div>';
+        } else {
+            var sec = secs[sk], s = TM_SECDEF[t][sk], n = sec.levels.length, dn = sec.levels.filter(function (l) { return starsOf(l) >= 1; }).length;
+            h = '<div class="hh tmh cpt" style="padding-bottom:16px"><div class="tsh"><button class="bk" id="bk" aria-label="back">‹</button><div><b>' + s[0] + '</b><small>' + s[1] + ' · Term ' + t + ' · ' + n + ' units</small></div></div><div class="chips">' + secs.map(function (x, k) { return '<span data-sec="' + k + '" class="' + (k === sk ? 'on' : '') + '">' + TM_SECDEF[t][k][6] + '</span>'; }).join('') + '</div><div class="ov" style="margin-top:12px"><i style="width:' + Math.round(dn / n * 100) + '%"></i></div><div class="ovt">' + dn + ' / ' + n + ' units done</div></div>';
+            h += '<div class="path tmn" style="--c:#14B8A6">';
+            sec.levels.forEach(function (l, i) {
+                var st = starsOf(l), cur = nxt && nxt.id === l.id, dx = [0, -48, -72, -48, 0, 48, 72, 48][i % 8], sp = ['test', 'exam', 'model', 'rev'].indexOf(l.tmType) >= 0 ? l.tmType : '';
+                h += '<div class="nd" style="transform:translateX(' + dx + 'px)">' + (cur ? '<div class="go-b">Go!</div>' : '') + '<button class="n ' + sp + (st >= 3 ? ' dn' : cur ? ' cur' : '') + '" data-l="' + l.id + '" style="' + (sp ? '' : 'background:linear-gradient(160deg,' + TM_COL[l.tmType] + 'cc,' + TM_COL[l.tmType] + ');') + '">' + l.ico + '<span class="ub">' + (l.tmIdx + 1) + '</span></button><div class="nl">' + l.tmTitle + '<small>' + l.ar + '</small></div>' + (st ? '<div class="nst">' + starImgs(st) + '</div>' : '') + '</div>';
+            });
+            h += '</div>';
+        }
+        el(h, 'home'); root.setAttribute('dir', 'ltr'); emojify(root);
+        var cb = root.querySelector('.n.cur'); if (cb) cb.parentNode.insertAdjacentHTML('afterbegin', '<img class="mm" src="mike/green_stand.png" alt="" style="left:calc(50% + 56px)">');
+        var g = function (q, f) { root.querySelectorAll(q).forEach(f); };
+        g('#mc', function (b) { b.onclick = settings; });
+        g('[data-tab]', function (b) { b.onclick = function () { state.tab = ''; save(); setLang(b.getAttribute('data-tab')); window.__scrolled = 0; map(); }; });
+        g('[data-term]', function (b) { b.onclick = function () { state.tmTerm = +b.getAttribute('data-term'); state.tmSec = null; save(); tmMap(); }; });
+        g('[data-sec]', function (b) { b.onclick = function () { state.tmSec = +b.getAttribute('data-sec'); save(); tmMap(); var m = root; try { m.scrollTop = 0; } catch (e) {} }; });
+        g('#bk', function (b) { b.onclick = function () { state.tmSec = null; save(); tmMap(); }; });
+        g('.n', function (b) { b.onclick = function () { learn(TMLV.filter(function (x) { return x.id === b.getAttribute('data-l'); })[0], 0); }; });
+    }
+    function tmOpen() { state.tab = 'tm'; if (LG !== 'en') setLang('en'); save(); window.__scrolled = 0; tmMap(); }
 
 
     /* ---------- mini-games (Mike hosts) ---------- */
@@ -999,5 +1252,5 @@ var MathAcademy = (function () {
             try { var t = new Audio('audio/mike/' + hid + '.m4a'); var pr = t.play(); if (pr && pr.then) pr.then(function () { played = true; document.removeEventListener('pointerdown', go, true); if (state && state.muted) t.pause(); }).catch(function () {}); } catch (e) {}
             document.addEventListener('pointerdown', go, true); }
     }
-    return { _seq: function (q) { return { q: qSeq(q), e: explSeq(q, q.ans) }; }, _cur: function () { return curQ; }, open: open, close: close, _all: function () { return ALL; }, _gen: function (id) { return ALL.filter(function (l) { return l.id === id; })[0].gen(); }, _lang: function (l) { setLang(l); }, _levels: function () { return ALL.map(function (l) { return l.id; }); }, _lvl: function (id) { return ALL.filter(function (l) { return l.id === id; })[0]; } };
+    return { _seq: function (q) { return { q: qSeq(q), e: explSeq(q, q.ans) }; }, _cur: function () { return curQ; }, open: open, close: close, _tmids: function () { return TMLV.map(function (l) { return l.id; }); }, _tmlearn: function (id) { var l = TMLV.filter(function (x) { return x.id === id; })[0]; learn(l, 0); }, _tmlv: function () { return TMLV; }, _all: function () { return ALL; }, _gen: function (id) { return ALL.filter(function (l) { return l.id === id; })[0].gen(); }, _lang: function (l) { setLang(l); }, _levels: function () { return ALL.map(function (l) { return l.id; }); }, _lvl: function (id) { return ALL.filter(function (l) { return l.id === id; })[0]; } };
 })();

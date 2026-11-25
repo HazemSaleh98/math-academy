@@ -622,7 +622,7 @@ var MathAcademy = (function () {
         } catch (e) { return null; }
         return ['ex_try', 'ex_ans_is'].concat(typeof ans === 'number' ? N(ans) : []);
     }
-    function speak(ids) { if (!ids || !ids.length || (state && state.muted)) return; NA.play(ids); }
+    function speak(ids) { if (!ids || !ids.length || (state && state.muted)) return; if (ids.ar && ids.ar.length && LG === 'en') { var ar = ids.ar; NA.play(ids, function (ok) { if (ok) setTimeout(function () { NA.play(ar); }, 250); }); return; } NA.play(ids); }
     var curQ = null;
     function qBox(q) { return '<div class="qs"><button class="spk" aria-label="replay">🔊</button></div>'; }
     function wireSpeaker(q) { var b = root && root.querySelector('.spk'); if (b) b.onclick = function () { try { if (mAud) mAud.pause(); } catch (e) {} speak(qSeq(q)); }; }
@@ -735,7 +735,7 @@ var MathAcademy = (function () {
             var mm = pg.match(/<div class="say">([\s\S]*?)<\/div>/); rest = pg;
             if (mm) { first = mm[1]; rest = pg.replace(mm[0], ''); } else first = pk(tx(['يلا نشوف مع بعض!', 'بص كده معايا!'], ['Let\'s look together!', 'Look with me!']));
         }
-        var cid = clipId(l, p), g0 = scr + 1; if (MK_AVAIL[cid] && !isCheck) { mikePlay(cid, function () { if (state.auto !== false && !isCheck && g0 === scr && root) setTimeout(function () { if (g0 === scr && root) learn(l, p + 1); }, 1200); }); } else { try { if (mAud) mAud.pause(); NA.stop(); } catch (e) {} }
+        var cid = clipId(l, p), g0 = scr + 1; if (MK_AVAIL[cid] && !isCheck) { var adv = function () { if (state.auto !== false && !isCheck && g0 === scr && root) setTimeout(function () { if (g0 === scr && root) learn(l, p + 1); }, 1200); }, arId = l.tm ? 'mk_' + (l.clip || l.id) + '_' + p : null; mikePlay(cid, function () { if (arId && MK_AVAIL[arId] && g0 === scr && root) setTimeout(function () { if (g0 === scr && root) mikePlay(arId, adv); }, 350); else adv(); }); } else { try { if (mAud) mAud.pause(); NA.stop(); } catch (e) {} }
         var hasCard = rest.replace(/<[^>]*>/g, '').trim() || /<(svg|i |div class="(ex|mb|pt|col|ar|tb|sk|pie|nlw|grps|bm|mny|cmp))/.test(rest);
         el(topbar('<button class="mx" id="mc">✕</button>', l.ico + ' ' + nm2(l), '<div class="mst">' + (p + 1) + '/' + pages.length + '</div>') + '<div class="pg"><i style="width:' + Math.round((p + 1) / pages.length * 100) + '%"></i></div><div id="mkx">' + mikeBox(first, 'stand') + '</div>'
             + (hasCard ? '<div class="card">' + rest + '</div>' : '')
@@ -914,21 +914,28 @@ var MathAcademy = (function () {
     var TM_DAYS = [['Saturday','السبت'],['Sunday','الأحد'],['Monday','الإثنين'],['Tuesday','الثلاثاء'],['Wednesday','الأربعاء'],['Thursday','الخميس'],['Friday','الجمعة']];
     var TM_MONTHS = [['January','يناير'],['February','فبراير'],['March','مارس'],['April','أبريل'],['May','مايو'],['June','يونيو'],['July','يوليو'],['August','أغسطس'],['September','سبتمبر'],['October','أكتوبر'],['November','نوفمبر'],['December','ديسمبر']];
     var TM_SHAPES = [['circle','دايرة','⚪'],['square','مربع','🟦'],['triangle','مثلث','🔺'],['rectangle','مستطيل','▭']];
-    function tmSeq() { if (LG !== 'en') return null; var o = []; for (var i = 0; i < arguments.length; i++) o = o.concat(arguments[i]); return o; }
+    function NN(n) { var a = N(n); a.n = n; return a; }
+    function NE(n) { var a = N(n); a.en = 1; return a; }
+    function tmSeq() { if (LG !== 'en') return null; var en = [], ar = [];
+        for (var i = 0; i < arguments.length; i++) { var a = arguments[i];
+            if (a.n != null) { en = en.concat(a); ar = ar.concat(NA.numIds(a.n)); }
+            else if (a.en) { en = en.concat(a); }
+            else a.forEach(function (id) { en.push(id); ar.push(id.replace(/^en_/, '')); }); }
+        en.ar = ar; return en; }
     function tmWord(n) { if (n === 0) return 'zero'; if (n <= 20) return TM_UNITS[n - 1]; if (TM_TENS[n]) return TM_TENS[n]; return TM_TENS[Math.floor(n / 10) * 10] + '-' + TM_UNITS[n % 10 - 1]; }
     function tmOpts(ans, lo, hi, k) { var s = {}, o = [ans]; s[ans] = 1; var g = 0; while (o.length < (k || 4) && g++ < 50) { var x = r(Math.max(lo, ans - 4), Math.min(hi, ans + 4)); if (!s[x]) { s[x] = 1; o.push(x); } } return shuf(o).map(String); }
     function tmPick(list, ans, k) { var o = [ans], g = 0; while (o.length < (k || 4) && g++ < 60) { var x = pk(list); if (o.indexOf(x) < 0) o.push(x); } return shuf(o); }
 
     function genNumWord(lo, hi) { var n = r(lo, hi), w = tmWord(n), ws = [w], g = 0;
         while (ws.length < 4 && g++ < 60) { var m = Math.max(1, Math.min(hi + 5, n + r(-5, 5))), x = tmWord(m); if (ws.indexOf(x) < 0) ws.push(x); }
-        return { seq: tmSeq(['en_tm_q_word'], N(n)), html: tx('أنهي كلمة تكتب العدد ' + B(n) + '؟', 'Which word is the number ' + B(n) + '?'), vis: n <= 20 ? dots(n) : '', opts: shuf(ws), ans: w, exp: say(n + ' = ' + w, n + ' is spelled ' + w) }; }
+        return { seq: tmSeq(['en_tm_q_word'], NE(n)), html: tx('أنهي كلمة تكتب العدد ' + B(n) + '؟', 'Which word is the number ' + B(n) + '?'), vis: n <= 20 ? dots(n) : '', opts: shuf(ws), ans: w, exp: say(n + ' = ' + w, n + ' is spelled ' + w) }; }
     function genWordNum(lo, hi) { var n = r(lo, hi);
-        return { seq: tmSeq(['en_tm_q_wordnum'], N(n)), html: tx('الكلمة دي معناها كام؟ ', 'What number is this word? ') + '<span class="big" dir="ltr">' + tmWord(n) + '</span>', vis: '', opts: tmOpts(n, Math.max(1, lo - 5), hi + 5), ans: String(n), exp: say(tmWord(n) + ' = ' + n, tmWord(n) + ' is ' + n) }; }
+        return { seq: tmSeq(['en_tm_q_wordnum'], NE(n)), html: tx('الكلمة دي معناها كام؟ ', 'What number is this word? ') + '<span class="big" dir="ltr">' + tmWord(n) + '</span>', vis: '', opts: tmOpts(n, Math.max(1, lo - 5), hi + 5), ans: String(n), exp: say(tmWord(n) + ' = ' + n, tmWord(n) + ' is ' + n) }; }
     function genBefore(tt, hi) { hi = hi || 20; var n = r(2, hi - 1), t = tt ? pk(tt) : r(0, 2), ans = t === 0 ? n - 1 : t === 1 ? n + 1 : n, q, sq;
         var ex = say((n - 1) + '، ' + n + '، ' + (n + 1), (n - 1) + ', ' + n + ', ' + (n + 1));
-        if (t === 2) return { seq: tmSeq(['en_tm_q_between'], N(n - 1), ['en_q_and'], N(n + 1)), html: tx('إيه العدد <b>اللي في النص</b> بين ' + B((n - 1) + ' و ' + (n + 1)) + '؟', 'What number is <b>between</b> ' + B((n - 1) + ' and ' + (n + 1)) + '?'), vis: '', opts: tmOpts(n, 0, hi), ans: String(n), exp: ex };
+        if (t === 2) return { seq: tmSeq(['en_tm_q_between'], NN(n - 1), ['en_q_and'], NN(n + 1)), html: tx('إيه العدد <b>اللي في النص</b> بين ' + B((n - 1) + ' و ' + (n + 1)) + '؟', 'What number is <b>between</b> ' + B((n - 1) + ' and ' + (n + 1)) + '?'), vis: '', opts: tmOpts(n, 0, hi), ans: String(n), exp: ex };
         if (t === 0) q = ['إيه العدد اللي <b>قبل</b> ' + B(n) + '؟', 'What number comes <b>before</b> ' + B(n) + '?']; else q = ['إيه العدد اللي <b>بعد</b> ' + B(n) + '؟', 'What number comes <b>after</b> ' + B(n) + '?'];
-        return { seq: tmSeq([t === 0 ? 'en_tm_q_before' : 'en_tm_q_after'], N(n)), html: tx(q[0], q[1]), vis: '', opts: tmOpts(ans, 0, hi), ans: String(ans), exp: ex }; }
+        return { seq: tmSeq([t === 0 ? 'en_tm_q_before' : 'en_tm_q_after'], NN(n)), html: tx(q[0], q[1]), vis: '', opts: tmOpts(ans, 0, hi), ans: String(ans), exp: ex }; }
     function genOrdinal() { var k = r(1, 10), items = ['🍎','🍌','🍇','🍓','🍊','🍐','🍒','🥕','🍋','🍉'], row = items.slice(0, 10);
         return { seq: tmSeq(['en_tm_q_ord_a', 'en_tm_ord_' + k, 'en_tm_q_ord_b']), html: tx('أنهي واحدة ' + B(TM_ORD[k - 1]) + '؟ (من الشمال)', 'Which one is the ' + B(TM_ORD[k - 1]) + '? (from the left)'), vis: '<div class="sk" dir="ltr">' + row.map(function (e, i) { return '<span>' + e + '</span>'; }).join('') + '</div>', opts: tmPick(row, row[k - 1]), ans: row[k - 1], exp: say('بنعد من الشمال: ' + TM_ORD.slice(0, k).join('، '), 'Count from the left: ' + TM_ORD.slice(0, k).join(', ')) }; }
     function genDay() { var i = r(0, 6), t = r(0, 1), d = TM_DAYS[i], a = TM_DAYS[(i + (t ? 1 : 6)) % 7];
@@ -945,22 +952,22 @@ var MathAcademy = (function () {
     function genDigital() { var h = r(1, 12), m = pk([0, 15, 30, 45]), t = h + ':' + (m < 10 ? '0' : '') + m, ws = [t], g = 0;
         while (ws.length < 4 && g++ < 60) { var x = r(1, 12) + ':' + pk(['00', '15', '30', '45']); if (ws.indexOf(x) < 0) ws.push(x); }
         var say_ = m === 0 ? h + " o'clock" : m === 30 ? 'half past ' + h : m === 15 ? 'quarter past ' + h : 'quarter to ' + (h % 12 + 1);
-        return { seq: tmSeq(['en_tm_q_digital'], N(h), m === 0 ? ['en_tm_t_oclock'] : N(m)), html: tx('الساعة الرقمية بتقول إيه؟ ' + B(t), 'Read the digital clock: ' + B(t)), vis: '', opts: shuf(ws), ans: t, exp: say('الساعة ' + t, 'It is ' + say_) }; }
+        return { seq: tmSeq(['en_tm_q_digital'], NN(h), m === 0 ? ['en_tm_t_oclock'] : NN(m)), html: tx('الساعة الرقمية بتقول إيه؟ ' + B(t), 'Read the digital clock: ' + B(t)), vis: '', opts: shuf(ws), ans: t, exp: say('الساعة ' + t, 'It is ' + say_) }; }
     function genTens(op) { var a = r(1, 9) * 10, b = r(1, 9) * 10; if (op === '-') { if (b > a) { var x = a; a = b; b = x; } } else { while (a + b > 100) { a = r(1, 9) * 10; b = r(1, 9) * 10; } }
         var ans = op === '-' ? a - b : a + b; return { html: B(a + ' ' + (op === '-' ? '−' : '+') + ' ' + b + ' = ?'), vis: blocks(a), ans: ans, exp: say((a / 10) + ' عشرات ' + (op === '-' ? 'ناقص ' : 'زائد ') + (b / 10) + ' = ' + (ans / 10) + ' عشرات = ' + ans, (a / 10) + ' tens ' + (op === '-' ? 'minus ' : 'plus ') + (b / 10) + ' tens = ' + (ans / 10) + ' tens = ' + ans) }; }
     function genMakeNum(big) { var a = r(1, 9), b = r(1, 9); while (b === a) b = r(1, 9);
         var hi = Math.max(a, b), lo = Math.min(a, b), ans = big ? hi * 10 + lo : lo * 10 + hi, other = big ? lo * 10 + hi : hi * 10 + lo, o = [String(ans), String(other)], g = 0;
         while (o.length < 4 && g++ < 40) { var x = String(r(1, 9) * 10 + pk([a, b])); if (o.indexOf(x) < 0) o.push(x); }
-        return { seq: tmSeq([big ? 'en_tm_q_make_big' : 'en_tm_q_make_small'], N(a), N(b)), html: tx('كوّن ' + (big ? 'أكبر' : 'أصغر') + ' عدد من الرقمين: ' + B(a + ' ' + b), 'Make the <b>' + (big ? 'greatest' : 'smallest') + '</b> number from the two digits: ' + B(a + ' ' + b)), vis: '', opts: shuf(o), ans: String(ans), exp: say(big ? 'الرقم الأكبر في خانة العشرات' : 'الرقم الأصغر في خانة العشرات', big ? 'Put the biggest digit in the tens place' : 'Put the smallest digit in the tens place') }; }
+        return { seq: tmSeq([big ? 'en_tm_q_make_big' : 'en_tm_q_make_small'], NN(a), NN(b)), html: tx('كوّن ' + (big ? 'أكبر' : 'أصغر') + ' عدد من الرقمين: ' + B(a + ' ' + b), 'Make the <b>' + (big ? 'greatest' : 'smallest') + '</b> number from the two digits: ' + B(a + ' ' + b)), vis: '', opts: shuf(o), ans: String(ans), exp: say(big ? 'الرقم الأكبر في خانة العشرات' : 'الرقم الأصغر في خانة العشرات', big ? 'Put the biggest digit in the tens place' : 'Put the smallest digit in the tens place') }; }
     function tmShape(n) { return '<div class="tshw"><i class="tsh_' + n + '"></i></div>'; }
     function genArr(asc, hi) { hi = hi || 50; var v = []; while (v.length < 3) { var x = r(1, hi); if (v.indexOf(x) < 0) v.push(x); }
         var s = v.slice().sort(function (a, b) { return asc ? a - b : b - a; }), ans = s.join(' , '), o = [ans], g = 0; while (o.length < 4 && g++ < 40) { var y = shuf(v).join(' , '); if (o.indexOf(y) < 0) o.push(y); }
-        return { seq: tmSeq([asc ? 'en_tm_q_arr_up' : 'en_tm_q_arr_down'], v.reduce(function (a, x) { return a.concat(N(x)); }, [])), html: tx(asc ? 'رتّب من الأصغر للأكبر: ' : 'رتّب من الأكبر للأصغر: ', asc ? 'Arrange from the smallest to the biggest: ' : 'Arrange from the biggest to the smallest: ') + B(v.join(' , ')), vis: '', opts: shuf(o), ans: ans, exp: say(asc ? 'الأصغر الأول: ' + s.join('، ') : 'الأكبر الأول: ' + s.join('، '), (asc ? 'Smallest first: ' : 'Biggest first: ') + s.join(', ')) }; }
+        return { seq: tmSeq.apply(null, [[asc ? 'en_tm_q_arr_up' : 'en_tm_q_arr_down']].concat(v.map(NN))), html: tx(asc ? 'رتّب من الأصغر للأكبر: ' : 'رتّب من الأكبر للأصغر: ', asc ? 'Arrange from the smallest to the biggest: ' : 'Arrange from the biggest to the smallest: ') + B(v.join(' , ')), vis: '', opts: shuf(o), ans: ans, exp: say(asc ? 'الأصغر الأول: ' + s.join('، ') : 'الأكبر الأول: ' + s.join('، '), (asc ? 'Smallest first: ' : 'Biggest first: ') + s.join(', ')) }; }
     function genHowMany(lo, hi) { var n = r(lo, hi);
         return { seq: tmSeq([n <= 20 ? 'en_q_n20' : 'en_tm_q_howmany']), html: tx(n <= 20 ? 'عدّ النقط. كام نقطة؟' : 'كام الكل؟', n <= 20 ? 'Count the dots. How many?' : 'How many in all?'), vis: n <= 20 ? dots(n) : blocks(n), ans: n, exp: say(n + ' = ' + (n >= 20 ? Math.floor(n / 10) + ' عشرات و ' + (n % 10) + ' آحاد' : 'عدّ واحدة واحدة'), n + ' = ' + (n >= 20 ? Math.floor(n / 10) + ' tens and ' + (n % 10) + ' ones' : 'count one by one')) }; }
     function genMissing(lo, hi, tensOnly) { var n = tensOnly ? r(Math.floor(lo / 10), Math.floor(hi / 10)) * 10 : r(lo, hi), w = tmWord(n).replace('-', ''), k = r(0, w.length - 1), ch = w.charAt(k), o = [ch], g = 0, A = 'abcdefghijklmnopqrstuvwxyz';
         while (o.length < 4 && g++ < 60) { var x = A.charAt(r(0, 25)); if (o.indexOf(x) < 0) o.push(x); }
-        return { seq: tmSeq(['en_tm_q_missing'], N(n)), html: tx('الحرف الناقص في كلمة ' + B(n) + ': ', 'Which letter is missing in ' + B(n) + '? ') + '<span class="big" dir="ltr">' + w.substr(0, k) + '_' + w.substr(k + 1) + '</span>', vis: '', opts: shuf(o), ans: ch, exp: say(n + ' = ' + w.split('').join(' '), n + ' is spelled ' + w.split('').join(' ')) }; }
+        return { seq: tmSeq(['en_tm_q_missing'], NE(n)), html: tx('الحرف الناقص في كلمة ' + B(n) + ': ', 'Which letter is missing in ' + B(n) + '? ') + '<span class="big" dir="ltr">' + w.substr(0, k) + '_' + w.substr(k + 1) + '</span>', vis: '', opts: shuf(o), ans: ch, exp: say(n + ' = ' + w.split('').join(' '), n + ' is spelled ' + w.split('').join(' ')) }; }
     function genTensCount() { var n = r(1, 10) * 10;
         return { seq: tmSeq(['en_tm_q_howmany']), html: tx('كام الكل؟', 'How many in all?'), vis: blocks(n), opts: tmPick([10,20,30,40,50,60,70,80,90,100].filter(function (x) { return Math.abs(x - n) <= 40; }), n).map(String), ans: String(n), exp: say((n / 10) + ' عشرات = ' + n, (n / 10) + ' tens = ' + n) }; }
     var TM_GEN = { numword: genNumWord, wordnum: genWordNum, ba: genBefore, ord: genOrdinal, day: genDay, month: genMonth, shape: genShape, tall: genTallest, onunder: genOnUnder, digital: genDigital, tens: genTens, make: genMakeNum };
@@ -1252,5 +1259,5 @@ var MathAcademy = (function () {
             try { var t = new Audio('audio/mike/' + hid + '.m4a'); var pr = t.play(); if (pr && pr.then) pr.then(function () { played = true; document.removeEventListener('pointerdown', go, true); if (state && state.muted) t.pause(); }).catch(function () {}); } catch (e) {}
             document.addEventListener('pointerdown', go, true); }
     }
-    return { _seq: function (q) { return { q: qSeq(q), e: explSeq(q, q.ans) }; }, _cur: function () { return curQ; }, open: open, close: close, _tmids: function () { return TMLV.map(function (l) { return l.id; }); }, _tmlearn: function (id) { var l = TMLV.filter(function (x) { return x.id === id; })[0]; learn(l, 0); }, _tmlv: function () { return TMLV; }, _all: function () { return ALL; }, _gen: function (id) { return ALL.filter(function (l) { return l.id === id; })[0].gen(); }, _lang: function (l) { setLang(l); }, _levels: function () { return ALL.map(function (l) { return l.id; }); }, _lvl: function (id) { return ALL.filter(function (l) { return l.id === id; })[0]; } };
+    return { _seq: function (q) { return { q: qSeq(q), e: explSeq(q, q.ans) }; }, _cur: function () { return curQ; }, open: open, close: close, _tmids: function () { return TMLV.map(function (l) { return l.id; }); }, _tmlearn: function (id) { var l = TMLV.filter(function (x) { return x.id === id; })[0]; learn(l, 0); }, _tmlv: function () { return TMLV; }, _tmlvAr: function () { var o = LG; LG = 'ar'; buildCur(); var r = TMLV.map(function (l) { return { id: l.id, clip: l.clip, pages: l.learn.map(function (p) { var m = p.match(/<div class="say">([\s\S]*?)<\/div>/); return m ? m[1] : null; }) }; }); LG = o; buildCur(); return r; }, _all: function () { return ALL; }, _gen: function (id) { return ALL.filter(function (l) { return l.id === id; })[0].gen(); }, _lang: function (l) { setLang(l); }, _levels: function () { return ALL.map(function (l) { return l.id; }); }, _lvl: function (id) { return ALL.filter(function (l) { return l.id === id; })[0]; } };
 })();

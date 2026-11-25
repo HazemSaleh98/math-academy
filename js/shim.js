@@ -14,4 +14,3 @@ var SFX = (function () {
         } catch (e) {}
     } };
 })();
-var MIKE_MATH_AVAIL = {};

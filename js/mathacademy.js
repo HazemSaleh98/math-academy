@@ -282,10 +282,10 @@ var MathAcademy = (function () {
     var PERSONAL = { ok_1: 1, ok_3: 1, streak_1: 1, retry_1: 1, done_1: 1, done_2: 1 };
     var mAud = null;
     function isMalek() { try { return kidName() === 'Malek'; } catch (e) { return false; } }
-    function mikePlay(file) {
+    function mikePlay(file, onend) {
         try { if (mAud) mAud.pause(); } catch (e) {}
         if (state && state.muted) return;
-        try { mAud = new Audio('audio/mike/' + (/^mk_/.test(file) ? '' : 'mike_') + file + '.m4a'); var p = mAud.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+        try { mAud = new Audio('audio/mike/' + (/^mk_/.test(file) ? '' : 'mike_') + file + '.m4a'); if (onend) { var au = mAud; au.onended = function () { if (au === mAud) onend(); }; } var p = mAud.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
     }
     function mikeId(kind) {
         var pool = { ok: ['ok_2', 'ok_4'], streak: ['streak_2'], retry: ['retry_2', 'retry_3'], done: ['done_3'] };
@@ -402,7 +402,7 @@ var MathAcademy = (function () {
             var mm = pg.match(/<div class="say">([\s\S]*?)<\/div>/); rest = pg;
             if (mm) { first = mm[1]; rest = pg.replace(mm[0], ''); } else first = pk(['يلا نشوف مع بعض!', 'بص كده معايا!']);
         }
-        var cid = 'mk_' + l.id + '_' + p; if (MK_AVAIL[cid]) mikePlay(cid); else try { if (mAud) mAud.pause(); } catch (e) {}
+        var cid = 'mk_' + l.id + '_' + p; if (MK_AVAIL[cid]) { var g0 = scr + 1; mikePlay(cid, function () { if (state.auto !== false && !isCheck && g0 === scr && root) setTimeout(function () { if (g0 === scr && root) learn(l, p + 1); }, 1200); }); } else try { if (mAud) mAud.pause(); } catch (e) {}
         el('<div class="mh"><button class="mx" id="mc">←</button><h1>' + l.ico + ' ' + l.ar + '</h1><div class="mst">' + (p + 1) + '/' + pages.length + '</div></div><div class="pg"><i style="width:' + Math.round((p + 1) / pages.length * 100) + '%"></i></div><div id="mkx">' + mikeBox(first, 'stand') + '</div>'
             + (rest.replace(/<[^>]*>/g, '').trim() || /<(svg|i |div class="(ex|mb|pt|col|ar|tb|sk))/.test(rest) ? '<div class="card">' + rest + '</div>' : '')
             + '<button class="btn" id="nx"' + (isCheck ? ' style="display:none"' : '') + '>' + (isCheck ? 'يلا نتدرب! 🚀' : 'التالي ▶') + '</button>' + (p ? '<button class="btn o" id="pv">◀ السابق</button>' : ''));
@@ -565,6 +565,10 @@ var MathAcademy = (function () {
         if (!state) return; injectCss(); close();
         try { VO.stop(); } catch (e) {}
         root = document.createElement('div'); root.id = 'ma'; document.body.appendChild(root); map();
+        var hid = (isMalek() && MK_AVAIL.mk_hello_malek) ? 'mk_hello_malek' : (MK_AVAIL.mk_hello ? 'mk_hello' : null);
+        if (hid && !window.__mkHello) { window.__mkHello = true; var played = false, go = function () { if (played) return; played = true; mikePlay(hid); document.removeEventListener('pointerdown', go, true); };
+            try { var t = new Audio('audio/mike/' + hid + '.m4a'); var pr = t.play(); if (pr && pr.then) pr.then(function () { played = true; document.removeEventListener('pointerdown', go, true); if (state && state.muted) t.pause(); }).catch(function () {}); } catch (e) {}
+            document.addEventListener('pointerdown', go, true); }
     }
     return { open: open, close: close, _all: ALL, _gen: function (id) { return ALL.filter(function (l) { return l.id === id; })[0].gen(); } };
 })();

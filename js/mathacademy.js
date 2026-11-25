@@ -275,7 +275,7 @@ var MathAcademy = (function () {
     /* ---------- progress ---------- */
     function prog() { if (!state.math) state.math = {}; return state.math; }
     function starsOf(l) { return prog()[l.id] || 0; }
-    function unlocked(l) { return l.idx === 0 || starsOf(l.track.levels[l.idx - 1]) >= 1; }
+    function unlocked(l) { return true; }
 
     /* ---------- Mike, the math teacher ---------- */
     var MIKE_T = { ok_1: 'برافو عليك يا مالك يا بطل! عين واحدة وشايفاك شاطر!', ok_2: 'الله! إجابة جامدة!', ok_3: 'كده يا مالك يا بطل! كمل!', ok_4: 'صح! أنا فرحان بيك أوي!', streak_1: 'ولا غلطة! انت نجم يا مالك!', streak_2: 'ده انت مولع! كمل كده!', retry_1: 'ولا يهمك يا مالك يا بطل! جرب تاني، انت تقدر!', retry_2: 'قربت! فكر تاني شوية.', retry_3: 'الغلط بيعلمنا! يلا تاني!', done_1: 'خلصنا الدرس! انت أحسن واحد في الدنيا يا مالك!', done_2: 'برافو يا مالك يا بطل! شلبي وأنا فخورين بيك أوي!', done_3: 'تعالى نلعب درس تاني؟ أنا جاهز!' };
